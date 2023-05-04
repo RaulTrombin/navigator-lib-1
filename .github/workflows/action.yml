@@ -9,8 +9,12 @@ jobs:
   linux:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        target: [x86_64, aarch64, armv7]
+        target: [aarch64, armv7] #x86_64 -error
+        manylinux: [musllinux_1_1, auto]
+        # python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -20,43 +24,68 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter
+          args: --release --out dist -i 3.9
           sccache: "true"
-          manylinux: auto
+          manylinux: ${{ matrix.manylinux }}
       - name: Upload wheels
         uses: actions/upload-artifact@v3
         with:
           name: wheels
           path: dist
+      # - name: Archive binary
+      #   run: |
+      #     cd target/${{ matrix.platform.target }}/release
+      #     tar czvf auditwheel-symbols.tar.gz auditwheel-symbols
+      #     cd -
 
-  sdist:
+  audit:
+    name: Auditwheel Symbols
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Build sdist
-        uses: PyO3/maturin-action@v1
-        with:
-          command: sdist
-          args: --out dist
-      - name: Upload sdist
-        uses: actions/upload-artifact@v3
-        with:
-          name: wheels
-          path: dist
-
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [linux, sdist]
+    needs: [linux]
     steps:
       - uses: actions/download-artifact@v3
         with:
           name: wheels
-      - name: Publish to PyPI
-        uses: PyO3/maturin-action@v1
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      - uses: actions/setup-python@v4
         with:
-          command: upload
-          args: --skip-existing *
+          python-version: "3.10"
+      - name: Install auditwheel-symbols
+        run: pip install auditwheel-symbols --force-reinstall
+      - name: Run auditwheel-symbols
+        run: |
+          for wheel in *manylinux*.whl; do
+            echo "Processing $wheel"
+            auditwheel-symbols "$wheel"
+          done
+
+  # sdist:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Build sdist
+  #       uses: PyO3/maturin-action@v1
+  #       with:
+  #         command: sdist
+  #         args: --out dist
+  #     - name: Upload sdist
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: wheels
+  #         path: dist
+
+  # release:
+  #   name: Release
+  #   runs-on: ubuntu-latest
+  #   if: "startsWith(github.ref, 'refs/tags/')"
+  #   needs: [linux, sdist]
+  #   steps:
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: wheels
+  #     - name: Publish to PyPI
+  #       uses: PyO3/maturin-action@v1
+  #       env:
+  #         MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+  #       with:
+  #         command: upload
+  #         args: --skip-existing *
