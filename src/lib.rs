@@ -43,10 +43,9 @@ impl From<navigator_rs::ReadADC> for ADCData {
     }
 }
 
-#[rustfmt::skip]
 export_cpy!(
     navigator {
-        
+
         enum Material {
             Plastic,
             Rubber,
@@ -75,7 +74,7 @@ export_cpy!(
 
         fn set_led_off() -> (){
             NavigationManager::get_instance().navigator.set_led_off()
-            }    
+            }
 
         fn read_adc() -> ADCData{
             NavigationManager::get_instance().navigator.read_adc().into()
@@ -84,7 +83,7 @@ export_cpy!(
         fn read_pressure() -> f32{
             NavigationManager::get_instance().navigator.read_pressure()
         }
-        
+
         fn read_temp() -> f32 {
             NavigationManager::get_instance().navigator.read_temperature()
         }
@@ -96,7 +95,7 @@ export_cpy!(
         fn read_accel() -> AxisData {
             NavigationManager::get_instance().navigator.read_accel().into()
         }
-        
+
         fn read_gyro() -> AxisData {
             NavigationManager::get_instance().navigator.read_gyro().into()
         }
