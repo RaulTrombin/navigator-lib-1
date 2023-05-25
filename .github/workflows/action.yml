@@ -5,6 +5,10 @@ on: [push, pull_request]
 permissions:
   contents: write
 
+env:
+  PACKAGE_NAME: navigator
+  PYTHON_VERSION: "3.9"
+
 jobs:
   build-python-gnu:
     #needs: [quick-tests]
@@ -53,5 +57,5 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v3
       with:
-        name: "python-${{ matrix.target }}-${{ matrix.libc }}"
+        name: python
         path: dist
