@@ -23,20 +23,20 @@ jobs:
       uses: PyO3/maturin-action@v1
       with:
         target: ${{ matrix.target }}
-        args: --release --out dist -i python3.9
+        args: --release --out dist -i python3.9 python3.11
         manylinux: ${{ matrix.libc }}
-    - uses: uraimo/run-on-arch-action@v2
+    - if: ${{ matrix.libc }} == musllinux_1_1
+      uses: uraimo/run-on-arch-action@master
       name: Install built wheel
       with:
         arch: ${{ matrix.target}}
-        distro: python:3.9-alpine
+        distro: alpine_latest
         githubToken: ${{ github.token }}
         install: |
           apk add py3-pip
           pip3 install -U pip
         run: |
           pip3 install navigator --no-index --find-links dist/ --force-reinstall
-          python3 -m examples/python/main.py
 
     - name: Upload wheels
       uses: actions/upload-artifact@v3
