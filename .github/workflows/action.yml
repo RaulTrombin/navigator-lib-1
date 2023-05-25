@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         target: [aarch64, armv7]
-        libc: [musllinux_1_1]
+        libc: [musllinux_1_2, auto]
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
@@ -25,7 +25,21 @@ jobs:
         target: ${{ matrix.target }}
         args: --release --out dist -i python3.9 python3.11
         manylinux: ${{ matrix.libc }}
-    - if: ${{ matrix.libc }} == musllinux_1_1
+    - if: ${{ matrix.libc }} == auto
+      uses: uraimo/run-on-arch-action@master
+      name: Install built wheel
+      with:
+        arch: ${{ matrix.target }}
+        distro: bullseye
+        githubToken: ${{ github.token }}
+        install: |
+          apt-get update
+          apt-get install -y --no-install-recommends python3 python3-pip
+          pip3 install -U pip
+        run: |
+          pip3 install navigator --no-index --find-links dist/ --force-reinstall
+
+    - if: ${{ matrix.libc }} == musllinux_1_2
       uses: uraimo/run-on-arch-action@master
       name: Install built wheel
       with:
