@@ -29,11 +29,11 @@ jobs:
       name: Install built wheel
       with:
         arch: ${{ matrix.target}}
-        distro: 3.9-alpine
+        distro: python:3.9-alpine
         githubToken: ${{ github.token }}
         install: |
           apk add py3-pip
-          pip3 install -U pip pytest
+          pip3 install -U pip
         run: |
           pip3 install navigator --no-index --find-links dist/ --force-reinstall
           python3 -m examples/python/main.py
