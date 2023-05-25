@@ -6,14 +6,14 @@ permissions:
   contents: write
 
 jobs:
-  build-python:
+  build-python-gnu:
     #needs: [quick-tests]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         target: [aarch64, armv7]
-        libc: [musllinux_1_2, auto]
+        libc: [auto]
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
@@ -25,8 +25,7 @@ jobs:
         target: ${{ matrix.target }}
         args: --release --out dist -i python3.9 python3.11
         manylinux: ${{ matrix.libc }}
-    - if: ${{ matrix.libc }} == auto
-      uses: uraimo/run-on-arch-action@master
+    - uses: uraimo/run-on-arch-action@master
       name: Install built wheel
       with:
         arch: ${{ matrix.target }}
@@ -38,9 +37,32 @@ jobs:
           pip3 install -U pip
         run: |
           pip3 install navigator --no-index --find-links dist/ --force-reinstall
+    - name: Upload wheels
+      uses: actions/upload-artifact@v3
+      with:
+        name: python
+        path: dist
 
-    - if: ${{ matrix.libc }} == musllinux_1_2
-      uses: uraimo/run-on-arch-action@master
+  build-python-musl:
+    #needs: [quick-tests]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64, armv7]
+        libc: [musllinux_1_2]
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+    - name: Build wheels
+      uses: PyO3/maturin-action@v1
+      with:
+        target: ${{ matrix.target }}
+        args: --release --out dist -i python3.9 python3.11
+        manylinux: ${{ matrix.libc }}
+    - uses: uraimo/run-on-arch-action@master
       name: Install built wheel
       with:
         arch: ${{ matrix.target}}
@@ -51,7 +73,6 @@ jobs:
           pip3 install -U pip
         run: |
           pip3 install navigator --no-index --find-links dist/ --force-reinstall
-
     - name: Upload wheels
       uses: actions/upload-artifact@v3
       with:
